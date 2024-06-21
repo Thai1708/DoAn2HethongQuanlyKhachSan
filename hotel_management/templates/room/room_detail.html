@@ -1,0 +1,142 @@
+{% extends "../base.html" %}
+{% load static %}
+{% block title %}Room All{% endblock %}
+{% block content %}
+
+<div class="container-xxl py-5">
+    <div class="container">
+        <div class="single-product">
+            <div class="row">
+                <div class="col-6">
+                    <div class="product-image">
+                        <div class="product-image-main">
+                            <img src="{{ room.image.url }}" alt="" id="product-main-image">
+                        </div>
+                        <div class="product-image-slider">
+                            <img src="{{ room.image.url }}" alt=""  class="image-list">
+                            <img src="{{ room.image1.url }}" alt=""  class="image-list">
+                            <img src="{{ room.image2.url }}" alt=""  class="image-list">
+                            <img src="{{ room.image3.url }}" alt=""  class="image-list">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    
+
+                    <div class="product">
+                        <div class="product-title">
+                            <h2>{{room.room_code}}-{{room_type.name}}</h2>
+                        </div>
+                        <!-- <div class="product-rating">
+                            <span><i class="bx bxs-star"></i></span>
+                            <span><i class="bx bxs-star"></i></span>
+                            <span><i class="bx bxs-star"></i></span>
+                            <span><i class="bx bxs-star"></i></span>
+                            <span><i class="bx bxs-star"></i></span>
+                            <span class="review">(47 Nhận xét)</span>
+                        </div> -->
+                        <div class="product-price">
+                            <span class="offer-price">${{room.price}}</span>
+                            <!-- <span class="sale-price">$129.00</span> -->
+                        </div>
+
+                        <div class="product-details">
+                            <h3>Mô tả</h3>
+                            <p>{{room.description}}</p>
+                        </div>
+                        
+                        <div>
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="black" class="bi bi-person-fill-add" viewBox="0 0 16 16">
+                                <path d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7m.5-5v1h1a.5.5 0 0 1 0 1h-1v1a.5.5 0 0 1-1 0v-1h-1a.5.5 0 0 1 0-1h1v-1a.5.5 0 0 1 1 0m-2-6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+                                <path d="M2 13c0 1 1 1 1 1h5.256A4.5 4.5 0 0 1 8 12.5a4.5 4.5 0 0 1 1.544-3.393Q8.844 9.002 8 9c-5 0-6 3-6 4"/>
+                              </svg>
+                            <div>
+                            {{room_type.bed_adult}} người lớn, có thể thêm người.
+                            <br>
+                            Khách 0 - 5 tuổi được ở miễn phí.
+                            <br>
+                            Tối đa {{room_type.max_adult}} người lớn , {{room_type.max_child}} trẻ em ở ghép.
+                        </div>
+                            
+                        </div>
+
+                        <div>
+                            <a href="{% url 'store:service_meal' %}">Hay đăng ký cùng vụ ăn uống...</a>
+                        </div>
+                        <div class="row g-2">
+                            <div>
+                                <form action="/action_page.php">
+                                    <label for="mealcode_select">Đặt dịch vụ ăn uống:</label>
+                                    <select name="cars" id="mealcode_select">
+                                        <option value="volvo">Không sử dụng</option>
+                                        {% for meal_code in meal_codes %}
+                                        <option value="{{meal_code.meal_code}}">{{meal_code.meal_code}}</option>
+                                        {% endfor %}
+                                    </select>
+                                  </form>
+                            </div>
+                            <div class="row">
+                            <div class="col-4">
+                                <form action="/action_page.php">
+                                    <label for="adult_select">Người lớn:</label>
+                                    <select id="adult_select">
+                                        {% for i in adult_selected_list %}
+                                        <option value="{{i}}">{{i}}</option>
+                                        {% endfor %}
+                                    </select>
+                                  </form>
+                            </div>
+                            <div class="col">
+                                <form action="/action_page.php">
+                                    <label for="child_select">Trẻ em:   </label>
+                                    <select id="child_select">
+                                        {% for i in child_selected_list %}
+                                        <option value="{{i}}">{{i}}</option>
+                                        {% endfor %}
+                                    </select>
+                                  </form>
+                            </div>
+                        </div>
+                        </div>
+                        
+                        
+                        <span class="divider"></span>
+
+                        <div class="product-btn-group">
+                            <a href="{% url 'store:room_all' %}"><div class="button buy-now"><i class='bx bxs-zap' ></i> Quay lại</div></a>
+                            <div id="add-button" value="{{room.id}}" class="button add-cart"><i class='bx bxs-cart' ></i> Thêm</div>
+                            <!-- <div class="button heart"><i class='bx bxs-heart' ></i> Add to Wishlist</div> -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).on('click', '#add-button', function (e) {
+        e.preventDefault();
+        var roomId = $(this).attr('value');  // Lấy giá trị của thuộc tính 'value'
+        $.ajax({
+            type: 'POST',
+            url: '{% url "basket:basket_add" %}',
+            data: {
+                roomid: roomId,
+                roomqty: '1',
+                mealcode: $('#mealcode_select option:selected').text(),
+                adultqty: $('#adult_select option:selected').text(),
+                childqty: $('#child_select option:selected').text(),
+                csrfmiddlewaretoken: "{{csrf_token}}",
+                action: 'post'
+            },
+            success: function (json) {
+               document.getElementById("basket-qty").innerHTML = json.qty;
+            },
+            error: function (xhr, errmsg, err) {}
+        });
+    })
+</script>
+
+{% endblock %}

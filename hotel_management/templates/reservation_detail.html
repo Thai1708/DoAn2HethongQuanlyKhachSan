@@ -1,0 +1,209 @@
+{% extends "./base.html" %}
+{% load static %}
+{% block title %}Reservation Detail{% endblock %}
+{% block content %}
+
+<div class="container-xxl py-5">
+    <div class="main">
+        <div class="page-title">Thông tin đặt phòng</div>
+
+        <div class="checkout-grid">
+            <div class="order-summary">
+                {% for item in basket %}
+                {% with room=item.room %}
+                <div class="cart-item-container room-item">
+                    <!-- <div class="delivery-date">
+                        Delivery date: Tuesday, June 21
+                    </div> -->
+
+                    <div class="cart-item-details-grid">
+                        <img class="product-image" src="{{room.image.url}}" height="300" width="300">
+
+                        <div class="cart-item-details">
+                            <div class="product-name">
+                                <h5>{{room.room_code}}</h5>
+                            </div>
+                            <div class="product-price">
+                                ${{room.price}}
+                            </div>
+                            <div class="product-quantity">
+                                <span>
+                                    Số lượng: <span class="quantity-label">{{item.qty}}</span>
+                                </span>
+                                <button class="update-quantity-link link-primary" style="border: none;background-color: white;">
+                                    Sửa
+                                </button>
+                                <button data-index="{{room.id}}" class="delete-quantity-link link-primary js-delete-room-button" style="border: none;background-color: white;">
+                                    Xóa
+                                </button>
+                            </div>
+                                <div class="col"><strong>Meal code - {{item.meal_code}}</strong></div>
+                                <div class="col"><small>Đặt qua website được giảm 10%</small></div>
+                                <div class="col"><small>Người lớn: {{item.adult_qty}} người - ${{item.adult_meal_cost}}</small></div>
+                                <div class="col"><small>Trẻ em: {{item.child_qty}} người - ${{item.child_meal_cost}}</small></div>
+                            </div>
+                        
+
+                        <!-- <div class="delivery-options">
+                            <div class="delivery-options-title">
+                                Choose a delivery option:
+                            </div>
+                            <select class="form-select" aria-label="Default select example">
+                                <option selected>Open this select menu</option>
+                                <option value="1">One Black and Gray Athletic Cotton Socks - 6 Pairs Black and Gray Athletic Cotton Socks - 6 Pairs</option>
+                                <option value="2">Two</option>
+                                <option value="3">Three</option>
+                              </select>
+                        </div> -->
+                    </div>
+                    
+                </div>
+                {% endwith %}
+                {% endfor %}
+            </div>
+
+            <div class="payment-summary">
+                <div class="payment-summary-title">
+                    Tổng hợp chi phí
+                </div>
+
+                <div class="payment-summary-row">
+                    <div>Tiền phòng:</div>
+                    <div class="payment-summary-money">${{basket.get_cost_before_tax}}</div>
+                </div>
+
+                <div class="payment-summary-row">
+                    <div>Dịch vụ ăn uống:</div>
+                    <div class="payment-summary-money">${{basket.get_total_meal_cost}}</div>
+                </div>
+
+                <div class="payment-summary-row subtotal-row">
+                    <div>Tổng tiền trước thuế:</div>
+                    <div class="payment-summary-money">${{basket.get_total_cost_before_tax}}</div>
+                </div>
+
+                <div class="payment-summary-row">
+                    <div>Tiền thuế (10%):</div>
+                    <div class="payment-summary-money">$ {{basket.get_total_tax}}</div>
+                </div>
+
+                <form action="" class="row" id="promo-form">
+                    {% csrf_token %}
+                    <div class="col">
+                        <input type="text" id="fname" name="fname" value="" placeholder="Nhập mã giảm giá..."><br>
+                    </div>
+                    
+                    <input type="submit" value="Áp dụng" class="col-3" style="background-color: orange;border: none;border-radius: 3px;">
+                  </form>
+
+                <div class="payment-summary-row total-row">
+                    <div>Chi phí 1 ngày:</div>
+                    <div class="payment-summary-money">$<span id="total-for-payment">{{basket.get_total_cost_with_tax}}</span></div>
+                </div>
+
+                <button class="place-order-button button-primary" onclick="placeOrder()" style="background-color: orange;border: none;border-radius: 3px;">
+                    Tiến hành thanh toán
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Delete Item
+    $(document).on('click', '.js-delete-room-button', function (e) {
+      e.preventDefault();
+      var prodid = $(this).data('index');
+      $.ajax({
+        type: 'POST',
+        url: '{% url "basket:basket_delete" %}',
+        data: {
+          roomid: $(this).data('index'),
+          csrfmiddlewaretoken: "{{csrf_token}}",
+          action: 'post'
+        },
+        success: function (json) {
+          $('.room-item[data-index="' + prodid + '"]').remove();
+          document.getElementById("subtotal").innerHTML = json.subtotal;
+          document.getElementById("basket-qty").innerHTML = json.qty;
+        },
+        error: function (xhr, errmsg, err) {}
+      });
+    })
+
+    // Tính toán khuyến mãi
+    function placeOrder() {
+    // Truy cập đến URL 'booking:visa_payment'
+    window.location.href = '{% url "booking:visa_payment" %}';
+    // "window.location.href='{% url 'booking:visa_payment' %}'"
+    var total_for_payment = document.getElementById("total-for-payment").innerHTML;
+    console.log(total_for_payment)
+
+    // Lưu giá trị "10" vào session
+    $.ajax({
+        url: '{% url "booking:save_promo_to_session" %}',
+        type: 'POST',
+        data: {
+            value: total_for_payment,
+            csrfmiddlewaretoken: "{{csrf_token}}",
+            action: 'post'
+        },
+        success: function(response) {
+            console.log('Value saved in session.');
+        },
+        error: function(xhr, status, error) {
+            console.error('Failed to save value in session: ' + error);
+        }
+    });
+};
+    function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        const csrftoken = getCookie('csrftoken');
+
+        $(document).ready(function() {
+            $('#promo-form').on('submit', function(event) {
+                event.preventDefault(); // Ngăn form nộp theo cách truyền thống
+
+                var promoCode = $('#fname').val(); // Lấy giá trị từ input
+
+                console.log(promoCode);
+
+                $.ajax({
+                    url: '{% url "booking:calculate_promo" %}',
+                    type: 'POST',
+                    data: {
+                        fname: promoCode
+                    },
+                    headers: {
+                        'X-CSRFToken': csrftoken
+                    },
+                    success: function(response) {
+                        // Xử lý phản hồi từ server (nếu có)
+                        // alert('Mã giảm giá đã được gửi: ' + response);
+                        console.log(response.total_for_payment);
+                        document.getElementById("total-for-payment").innerHTML = response.total_for_payment;
+
+                    },
+                    error: function(xhr, status, error) {
+                        // Xử lý lỗi (nếu có)
+                        console.error('Đã xảy ra lỗi: ' + error);
+                    }
+                });
+            });
+        });
+</script>
+
+{% endblock %}
